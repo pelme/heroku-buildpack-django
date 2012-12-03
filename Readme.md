@@ -19,12 +19,12 @@ npm_requirements.txt:
 
     coffee-script
     less@1.0.0
-    
+
 would result in the following commands being run to resolve the dependencies:
 
     $ npm install -g coffee-script
     $ npm install -g less@1.0.0
-    
+
 Why install Node along with Python?
 -----------------------------------
 
@@ -57,6 +57,10 @@ Example usage:
            Successfully installed Flask Werkzeug Jinja2
            Cleaning up...
 
+You can also add it to upcoming builds of an existing application:
+
+    $ heroku config:add BUILDPACK_URL=git://github.com/heroku/heroku-buildpack-python.git
+
 The buildpack will detect your app as Python if it has the file `requirements.txt` in the root. It will detect your app as Python/Django if there is an additional `settings.py` in a project subdirectory.
 
 It will use virtualenv and pip to install your dependencies, vendoring a copy of the Python runtime into your slug.  The `bin/`, `include/` and `lib/` directories will be cached between builds to allow for faster pip install time.
@@ -74,4 +78,4 @@ Changing Buildpacks
 If you've already deployed an app to heroku and you'd like to switch to this buildpack from the standard python buildpack, just run the following command with the heroku command line app:
 
     heroku config:add BUILDPACK_URL=git://github.com/jiaaro/heroku-buildpack-django.git
-    
+
