@@ -66,36 +66,7 @@ unset GIT_DIR PYTHONHOME PYTHONPATH LD_LIBRARY_PATH LIBRARY_PATH
 # We'll need to send these statics to other scripts we `source`.
 export PIP_DOWNLOAD_CACHE BUILD_DIR CACHE_DIR BIN_DIR PROFILE_PATH
 
-# Syntax sugar.
-indent() {
-  RE="s/^/       /"
-  [ $(uname) == "Darwin" ] && sed -l "$RE" || sed -u "$RE"
-}
-
-# Virtualenv wrapper.
-function virtualenv (){
-  python "$ROOT_DIR/vendor/virtualenv-1.7.2/virtualenv.py" "$@"
-}
-
-# Buildpack Steps.
-function puts-step (){
-  echo "-----> $@"
-}
-
-# Buildpack Warnings.
-function puts-warn (){
-  echo " !     $@"
-}
-
-# Usage: $ set-env key value
-function set-env (){
-  echo "export $1=$2" >> $PROFILE_PATH
-}
-
-# Usage: $ set-default-env key value
-function set-default-env (){
-  echo "export $1=\${$1:-$2}" >> $PROFILE_PATH
-}
+source $BIN_DIR/utils
 
 # ## Build Time
 #
@@ -157,7 +128,7 @@ HEROKU_DIR_STATUS=$?
 
 # TODO: This is a new app, disable injection.
 # [ $HEROKU_DIR_STATUS -eq 0 ] && {
-  #TODO: touch .heroku/injection_disabled
+  # TODO: touch .heroku/injection_disabled
 # }
 set -e
 
@@ -172,7 +143,7 @@ mkdir -p $(dirname $PROFILE_PATH)
 
 set +e
 puts-step "Preparing Python interpreter ($PYTHON_VERSION)"
-puts-step "Creating Virtualenv version $(virtualenv --version)"
+puts-step "Creating Virtualenv ($(virtualenv --version))"
 
 # Try to create the virtualenv.
 OUT=$(virtualenv --python $PYTHON_EXE --distribute --never-download --prompt='(venv) ' $VIRTUALENV_LOC 2>&1)
@@ -187,7 +158,7 @@ OUT=$(virtualenv --python $PYTHON_EXE --distribute --never-download --prompt='(v
   done
   OUT=$(virtualenv --python $PYTHON_EXE --distribute --never-download  --prompt='(venv) ' $VIRTUALENV_LOC )
 }
-echo "$OUT" | sed -e 's/\.\.\.\+/.../g' | indent
+echo "$OUT"  | cleanup | indent
 
 set -e
 
@@ -196,17 +167,16 @@ set -e
 source $BIN_DIR/steps/pylibmc
 
 # Activate the Virtualenv.
-puts-step "Activating virtualenv"
 source $VIRTUALENV_LOC/bin/activate
 
 # Install Mercurial if it appears to be required.
 if (grep -Fiq "hg+" requirements.txt) then
-  pip install --use-mirrors mercurial | indent
+  pip install --use-mirrors mercurial | cleanup | indent
 fi
 
 # Install dependencies with Pip.
-puts-step "Installing dependencies using pip version $(pip --version | awk '{print $2}')"
-pip install --use-mirrors -r requirements.txt --exists-action=w --src=./.heroku/src | indent
+puts-step "Installing dependencies using pip ($(pip --version | awk '{print $2}'))"
+pip install --use-mirrors -r requirements.txt --exists-action=w --src=./.heroku/src | cleanup | indent
 
 # Do additional application hackery if applications appears to be a Django app.
 # Optionally, disable all Django-specific changes with `DISABLE_INJECTION` env.
